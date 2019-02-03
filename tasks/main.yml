@@ -1,15 +1,40 @@
 - name: Ansible created sudo accounts
   user: name={{ item.username }}  state=present groups="users,wheel" update_password="{{ item.updatepassword }}" password="{{ item.password | password_hash('sha512') }}" comment='Ansible created  "{{ item.username }}" sudo account'
   sudo: yes
-  when:  item.issudo  == True 
+  when:  item.issudo  == True and (ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux')
   with_items: '{{ users }}'
-  
-- name: Ansible created regular accounts  
-  user: name={{ item.username }} state=present groups="users" update_password="{{ item.updatepassword }}" password="{{ item.password | password_hash('sha512') }}" comment='Ansible created  "{{ item.username }}" regular account' 
+
+- name: Ansible created regular accounts
+  user: name={{ item.username }} state=present groups="users" update_password="{{ item.updatepassword }}" password="{{ item.password | password_hash('sha512') }}" comment='Ansible created  "{{ item.username }}" regular account'
   sudo: yes
-  when: item.issudo == False 
+  when: item.issudo == False and (ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux')
   with_items: '{{ users }}'
- 
+
+- lineinfile:
+   path: /etc/sudoers
+   state: present
+   regexp: '^%wheel\s'
+   line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+- name: Ansible created sudo accounts
+  user: name={{ item.username }}  state=present groups="users,root"  comment='Ansible created  "{{ item.username }}" sudo account'
+  sudo: yes
+  when:  item.issudo  == True and (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items: '{{ users }}'
+
+- name: Ansible created regular accounts
+  user: name={{ item.username }} state=present groups="users"  comment='Ansible created  "{{ item.username }}" regular account'
+  sudo: yes
+  when: item.issudo == False and (ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu')
+  with_items: '{{ users }}'
+
+- lineinfile:
+   path: /etc/sudoers
+   state: present
+   regexp: '^%root\s'
+   line: '%root ALL=(ALL) NOPASSWD: ALL'
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
 # - debug:
     # msg:"{{ item.password | password_hash('sha512') }}"
   # with_items: '{{ users }}'
