@@ -35,6 +35,11 @@
    regexp: '^%root\s'
    line: '%root ALL=(ALL) NOPASSWD: ALL'
   when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  
+  
+- raw: usermod --shell /bin/bash "{{ item.username }}"
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  with_items: '{{ users }}'
 # - debug:
     # msg:"{{ item.password | password_hash('sha512') }}"
   # with_items: '{{ users }}'
